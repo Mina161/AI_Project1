@@ -36,6 +36,8 @@ public class LLAPSearch extends GenericSearch{
 	
 	static int maxDepth = Integer.MAX_VALUE;
 	
+	String strategy;
+	
 	public static void main(String[] args) {
 		String init = "50;"+
 				"22,22,22;" +
@@ -43,7 +45,7 @@ public class LLAPSearch extends GenericSearch{
 				"30,2;19,1;15,1;" +
 				"300,5,7,3,20;" +
 				"500,8,6,3,40;";
-		System.out.println(solve(init,"BF", false));
+		System.out.println(solve(init,"DF", false));
 		printStaticVariables();
     }
 
@@ -68,16 +70,30 @@ public class LLAPSearch extends GenericSearch{
 	public static String solve(String initalState, String strategy, boolean visualize) {
 		LLAPSearch LLAP = new LLAPSearch();
 		LLAP.parseProblem(initalState);
+		LLAP.setStrategy(strategy);
 		Node solution;
 		switch (strategy) {
 			case "BF":
 				solution = LLAP.BF();
+				break;
+			case "ID":
+				solution = LLAP.ID();
+				break;
+			case "DF":
+				solution = LLAP.DF();
+				break;
+			case "UC":
+				solution = LLAP.UC();
 				break;
 			default:
 				solution = LLAP.DF();
 				break;
 		}
 		return LLAP.formulateSolution(solution);
+	}
+	
+	public void setStrategy(String strategy) {
+		this.strategy = strategy;
 	}
 	
 	public void parseProblem(String problem) {
@@ -211,12 +227,14 @@ public class LLAPSearch extends GenericSearch{
 				}
 			}
 		}
-		for (int i=nodes.size()-1;i>=0;i--) {
-			for (Node expandedNode : this.expandedNodes) {
-				if(nodes.get(i).equals(expandedNode)) {
-					System.out.println("Removing redundant child:");
-					System.out.println(nodes.remove(i));
-					break;
+		if(!strategy.equals("ID")) {
+			for (int i=nodes.size()-1;i>=0;i--) {
+				for (Node expandedNode : this.expandedNodes) {
+					if(nodes.get(i).equals(expandedNode)) {
+						System.out.println("Removing redundant child:");
+						System.out.println(nodes.remove(i));
+						break;
+					}
 				}
 			}
 		}
@@ -245,6 +263,32 @@ public class LLAPSearch extends GenericSearch{
 		System.out.println("Starting DFS ...");
 		return this.search( new PriorityQueue<Node>((o1, o2) -> {
     		return o1.depth>o2.depth?-1:1;
+    	}));
+    }
+	
+	public Node LD(int limit) {
+		System.out.println("Starting LDS ...");
+		maxDepth = limit;
+		Node goal = DF();
+		return goal;
+    }
+	
+	public Node ID() {
+		System.out.println("Starting IDS ...");
+		Node goal = null;
+		for(int i = 0; i <Integer.MAX_VALUE; i++) {
+			goal = LD(i);
+			if(goal != null) {
+				break;
+			}
+		}
+		return goal;
+    }
+	
+	public Node UC() {
+		System.out.println("Starting UCS ...");
+		return this.search( new PriorityQueue<Node>((o1, o2) -> {
+    		return o1.pathCost<o2.pathCost?-1:1;
     	}));
     }
 	
