@@ -40,13 +40,13 @@ public class LLAPSearch extends GenericSearch{
 	int removedNodes=0;
 	
 	public static void main(String[] args) {
-		String init = "17;" +
-                "49,30,46;" +
-                "7,57,6;" +
-                "7,1;20,2;29,2;" +
-                "350,10,9,8,28;" +
-                "408,8,12,13,34;";
-		solve(init,"ID", false);
+		String init = "21;" +
+                "15,19,13;" +
+                "50,50,50;" +
+                "12,2;16,2;9,2;" +
+                "3076,15,26,28,40;" +
+                "5015,25,15,15,38;";
+		solve(init,"AS1", true);
 		printStaticVariables();
     }
 
@@ -72,6 +72,7 @@ public class LLAPSearch extends GenericSearch{
 		LLAPSearch LLAP = new LLAPSearch();
 		LLAP.parseProblem(initalState);
 		LLAP.setStrategy(strategy);
+		LLAP.visualize = visualize;
 		Node solution;
 		switch (strategy) {
 			case "BF":
@@ -85,6 +86,18 @@ public class LLAPSearch extends GenericSearch{
 				break;
 			case "UC":
 				solution = LLAP.UC();
+				break;
+			case "AS1":
+				solution = LLAP.AS1();
+				break;
+			case "AS2":
+				solution = LLAP.AS2();
+				break;
+			case "GR1":
+				solution = LLAP.GR1();
+				break;
+			case "GR2":
+				solution = LLAP.GR2();
 				break;
 			default:
 				solution = LLAP.DF();
@@ -150,7 +163,9 @@ public class LLAPSearch extends GenericSearch{
 	public String getPlan(Node node) {
 		if(node.parent == null) return "";
 		String parentPlan = getPlan(node.parent);
-		System.out.println(node); // Printing nodes' order to reach goal
+		if(this.visualize) {
+			System.out.println(node); // Printing nodes' order to reach goal
+		}
 		String plan = parentPlan + (parentPlan.equals("")?"":",") + node.opertor.name();
 		return plan;
 	}
@@ -300,5 +315,46 @@ public class LLAPSearch extends GenericSearch{
 		return this.search();
     }
 	
+	public double heuristic1(Node node) {
+		return Math.max(0, Constants.GOAL_PROSPERITY_LEVEL - node.state.prosperity);
+	}
+	
+	public double heuristic2(Node node) {
+		int resourceShortage = (Constants.RESOURCE_LIMIT - node.state.food) * unitPriceFood + (Constants.RESOURCE_LIMIT - node.state.materials) * unitPriceMaterials  +(Constants.RESOURCE_LIMIT - node.state.energy) * unitPriceEnergy ;
+		int prosperityShortage = Math.max(0, Constants.GOAL_PROSPERITY_LEVEL - node.state.prosperity);
+		return Math.min(resourceShortage, prosperityShortage);
+	}
+	
+	public Node GR1() {
+		System.out.println("Starting GR1 ...");
+		this.queue = new PriorityQueue<Node>((o1, o2) -> {
+    		return heuristic1(o1)<heuristic1(o2)?-1:1;
+    	});
+		return this.search();
+    }
+	
+	public Node GR2() {
+		System.out.println("Starting GR2 ...");
+		this.queue = new PriorityQueue<Node>((o1, o2) -> {
+    		return heuristic2(o1)<heuristic2(o2)?-1:1;
+    	});
+		return this.search();
+    }
+	
+	public Node AS1() {
+		System.out.println("Starting AS1 ...");
+		this.queue = new PriorityQueue<Node>((o1, o2) -> {
+    		return o1.pathCost+heuristic1(o1)<o2.pathCost+heuristic1(o2)?-1:1;
+    	});
+		return this.search();
+    }
+	
+	public Node AS2() {
+		System.out.println("Starting AS2 ...");
+		this.queue = new PriorityQueue<Node>((o1, o2) -> {
+    		return o1.pathCost+heuristic2(o1)<o2.pathCost+heuristic2(o2)?-1:1;
+    	});
+		return this.search();
+    }
 
 }
