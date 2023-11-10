@@ -11,6 +11,7 @@ public abstract class GenericSearch {
 	Queue<Node> expandedNodes;
 	Queue<Node> queue;
 	HashSet<Node> nodesInQueue = new HashSet<Node>();
+	boolean visualize;
 	
 
 	public GenericSearch() {
