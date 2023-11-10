@@ -69,6 +69,7 @@ public class LLAPSearch extends GenericSearch{
     }
     
 	public static String solve(String initalState, String strategy, boolean visualize) {
+		maxDepth = Integer.MAX_VALUE;
 		LLAPSearch LLAP = new LLAPSearch();
 		LLAP.parseProblem(initalState);
 		LLAP.setStrategy(strategy);
@@ -155,7 +156,9 @@ public class LLAPSearch extends GenericSearch{
 		if (goalNode == null) {
 			return "NOSOLUTION";
 		}else {
-			System.out.println("Path to goal:");
+			if(this.visualize) {
+				System.out.println("Path to goal:");
+			}
 			return getPlan(goalNode) + ";" + Integer.toString(goalNode.pathCost) + ";" + this.expandedNodes.size();
 		}
 	}
@@ -281,7 +284,10 @@ public class LLAPSearch extends GenericSearch{
     }
 	 
 	public Node DF() {
-		System.out.println("Starting DFS ...");
+		if(strategy == "DF")
+			System.out.println("Starting DFS ...");
+		else
+			System.out.println("Starting DFS with max depth " + maxDepth + " ...");
 		this.queue = new PriorityQueue<Node>((o1, o2) -> {
     		return o1.depth>o2.depth?-1:1;
     	});
