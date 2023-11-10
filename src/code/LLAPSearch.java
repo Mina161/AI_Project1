@@ -2,7 +2,6 @@ package code;
 
 import java.lang.reflect.Field;
 import java.util.PriorityQueue;
-
 import code.Constants.*;
 
 import java.util.ArrayList;
@@ -38,14 +37,16 @@ public class LLAPSearch extends GenericSearch{
 	
 	String strategy;
 	
+	int removedNodes=0;
+	
 	public static void main(String[] args) {
-		String init = "50;"+
-				"22,22,22;" +
-				"50,60,70;" +
-				"30,2;19,1;15,1;" +
-				"300,5,7,3,20;" +
-				"500,8,6,3,40;";
-		System.out.println(solve(init,"DF", false));
+		String init = "17;" +
+                "49,30,46;" +
+                "7,57,6;" +
+                "7,1;20,2;29,2;" +
+                "350,10,9,8,28;" +
+                "408,8,12,13,34;";
+		solve(init,"ID", false);
 		printStaticVariables();
     }
 
@@ -89,7 +90,9 @@ public class LLAPSearch extends GenericSearch{
 				solution = LLAP.DF();
 				break;
 		}
-		return LLAP.formulateSolution(solution);
+		String formulatedSolution = LLAP.formulateSolution(solution);
+		System.out.println(formulatedSolution);
+		return formulatedSolution;
 	}
 	
 	public void setStrategy(String strategy) {
@@ -101,6 +104,7 @@ public class LLAPSearch extends GenericSearch{
 		State initialState = State.parseInitialState(parsedProblem[0], parsedProblem[1]);
 		
 		this.root = new Node(null, 0, null, initialState, 0);
+		nodesInQueue.add(root);
 		
 		String[] unitPrices = parsedProblem[2].split(",");
 		unitPriceFood = Integer.parseInt(unitPrices[0]);
@@ -138,6 +142,7 @@ public class LLAPSearch extends GenericSearch{
 		if (goalNode == null) {
 			return "NOSOLUTION";
 		}else {
+			System.out.println("Path to goal:");
 			return getPlan(goalNode) + ";" + Integer.toString(goalNode.pathCost) + ";" + this.expandedNodes.size();
 		}
 	}
@@ -145,6 +150,7 @@ public class LLAPSearch extends GenericSearch{
 	public String getPlan(Node node) {
 		if(node.parent == null) return "";
 		String parentPlan = getPlan(node.parent);
+		System.out.println(node); // Printing nodes' order to reach goal
 		String plan = parentPlan + (parentPlan.equals("")?"":",") + node.opertor.name();
 		return plan;
 	}
@@ -180,17 +186,17 @@ public class LLAPSearch extends GenericSearch{
 			requestedResource = null;
 		}
 		
-		State stateRequestFood = new State(node.state.prosperity, Math.min(node.state.food-1+food, Constants.RESOURCE_LIMIT), Math.min(node.state.materials-1+materials, Constants.RESOURCE_LIMIT), Math.min(node.state.energy-1+energy, Constants.RESOURCE_LIMIT), delayRequestFood+1, Resource.FOOD);
-		Node nodeRequestFood = new Node(node, node.depth+1, Action.REQUEST_FOOD, stateRequestFood, node.pathCost+ unitPriceEnergy+ unitPriceFood+ unitPriceMaterials);
+		State stateRequestFood = new State(node.state.prosperity, Math.min(node.state.food-1+food, Constants.RESOURCE_LIMIT), Math.min(node.state.materials-1+materials, Constants.RESOURCE_LIMIT), Math.min(node.state.energy-1+energy, Constants.RESOURCE_LIMIT), delayRequestFood, Resource.FOOD);
+		Node nodeRequestFood = new Node(node, node.depth+1, Action.REQUESTFOOD, stateRequestFood, node.pathCost+ unitPriceEnergy+ unitPriceFood+ unitPriceMaterials);
 		children.add(nodeRequestFood);
 		
 		
-		State stateRequestMaterials = new State(node.state.prosperity, Math.min(node.state.food-1+food, Constants.RESOURCE_LIMIT), Math.min(node.state.materials-1+materials, Constants.RESOURCE_LIMIT), Math.min(node.state.energy-1+energy, Constants.RESOURCE_LIMIT), delayRequestMaterials+1, Resource.MATERIALS);
-		Node nodeRequestMaterials = new Node(node, node.depth+1, Action.REQUEST_MATERIALS, stateRequestMaterials, node.pathCost+ unitPriceEnergy+ unitPriceFood+ unitPriceMaterials);
+		State stateRequestMaterials = new State(node.state.prosperity, Math.min(node.state.food-1+food, Constants.RESOURCE_LIMIT), Math.min(node.state.materials-1+materials, Constants.RESOURCE_LIMIT), Math.min(node.state.energy-1+energy, Constants.RESOURCE_LIMIT), delayRequestMaterials, Resource.MATERIALS);
+		Node nodeRequestMaterials = new Node(node, node.depth+1, Action.REQUESTMATERIALS, stateRequestMaterials, node.pathCost+ unitPriceEnergy+ unitPriceFood+ unitPriceMaterials);
 		children.add(nodeRequestMaterials);
 		
-		State stateRequestEnergy = new State(node.state.prosperity, Math.min(node.state.food-1+food, Constants.RESOURCE_LIMIT), Math.min(node.state.materials-1+materials, Constants.RESOURCE_LIMIT), Math.min(node.state.energy-1+energy, Constants.RESOURCE_LIMIT), delayRequestEnergy+1, Resource.ENERGY);
-		Node nodeRequestEnergy = new Node(node, node.depth+1, Action.REQUEST_ENERGY, stateRequestEnergy, node.pathCost+ unitPriceEnergy+ unitPriceFood+ unitPriceMaterials);
+		State stateRequestEnergy = new State(node.state.prosperity, Math.min(node.state.food-1+food, Constants.RESOURCE_LIMIT), Math.min(node.state.materials-1+materials, Constants.RESOURCE_LIMIT), Math.min(node.state.energy-1+energy, Constants.RESOURCE_LIMIT), delayRequestEnergy, Resource.ENERGY);
+		Node nodeRequestEnergy = new Node(node, node.depth+1, Action.REQUESTENERGY, stateRequestEnergy, node.pathCost+ unitPriceEnergy+ unitPriceFood+ unitPriceMaterials);
 		children.add(nodeRequestEnergy);
 		
 		State stateWait = new State(node.state.prosperity, Math.min(node.state.food-1+food, Constants.RESOURCE_LIMIT), Math.min(node.state.materials-1+materials, Constants.RESOURCE_LIMIT), Math.min(node.state.energy-1+energy, Constants.RESOURCE_LIMIT), delay, requestedResource);
@@ -207,48 +213,47 @@ public class LLAPSearch extends GenericSearch{
 		Node nodeBuild2 = new Node(node, node.depth+1, Action.BUILD2, stateBuild2, build2PathCost);
 		children.add(nodeBuild2);
 		
-		removeReduntantNodes(children);
 		removeInvalidNodes(children);
+		removeReduntantNodes(children);
 		
 		return children;
 	}
 	
 	public void removeReduntantNodes(ArrayList<Node> nodes) {
-		for(int i=0;i<nodes.size();i++) {
-			for(int j=i+1;j<nodes.size();j++) {
-				if(nodes.get(i).equals(nodes.get(j))) {
-					if(nodes.get(i).compareTo(nodes.get(j)) == 1) {
-						System.out.println("Removing repeated child 1:");
-						System.out.println(nodes.remove(i));
-					}else if(nodes.get(i).compareTo(nodes.get(j)) == -1) {
-						System.out.println("Removing repeated child 2:");
-						System.out.println(nodes.remove(j));
-					}
-				}
-			}
-		}
-		if(!strategy.equals("ID")) {
-			for (int i=nodes.size()-1;i>=0;i--) {
-				for (Node expandedNode : this.expandedNodes) {
-					if(nodes.get(i).equals(expandedNode)) {
-						System.out.println("Removing redundant child:");
-						System.out.println(nodes.remove(i));
-						break;
-					}
-				}
+		for (int i=nodes.size()-1;i>=0;i--) {
+			if(nodesInQueue.contains(nodes.get(i))) {
+				nodes.remove(i);
+			}else {
+				nodesInQueue.add(nodes.get(i));
 			}
 		}
 	}
 	
+	public boolean isNodeInvalid(Node node) {
+		 return notEnoughResources(node) || invalidRequestAction(node) || !canWait(node) || fullResource(node);
+	}
+	
+	public boolean notEnoughResources(Node node) {
+		return node.state.energy < 0 || node.state.food < 0 || node.state.materials < 0 ||
+				node.pathCost > Constants.INITIAL_MONEY || node.depth > maxDepth;
+	}
+	
+	public boolean invalidRequestAction(Node node) {
+		return node.parent.state.requestedResources != null &&
+				(node.opertor == Action.REQUESTENERGY || node.opertor == Action.REQUESTFOOD || node.opertor == Action.REQUESTMATERIALS);
+	}
+	
+	public boolean fullResource(Node node) {
+		return (node.opertor == Action.REQUESTENERGY && (node.state.energy == 50)) || (node.opertor == Action.REQUESTFOOD && (node.state.food == 50)) || (node.opertor == Action.REQUESTMATERIALS && (node.state.materials == 50));
+	}
+	
+	public boolean canWait(Node node) {
+		return !(node.parent.state.requestedResources == null && node.opertor == Action.WAIT);
+	}
+	
 	public void removeInvalidNodes(ArrayList<Node> nodes) {
 		for (int i=nodes.size()-1;i>=0;i--) {
-			if(nodes.get(i).state.energy < 0 || nodes.get(i).state.food < 0 || nodes.get(i).state.materials < 0 ||
-					nodes.get(i).pathCost > Constants.INITIAL_MONEY || nodes.get(i).depth > maxDepth ) {
-				nodes.remove(i);
-			}else if(nodes.get(i).parent.state.requestedResources != null &&
-					(nodes.get(i).opertor == Action.REQUEST_ENERGY || nodes.get(i).opertor == Action.REQUEST_FOOD || nodes.get(i).opertor == Action.REQUEST_MATERIALS)) {
-				nodes.remove(i);
-			}else if(nodes.get(i).parent.state.requestedResources == null && nodes.get(i).opertor == Action.WAIT) {
+			if(isNodeInvalid(nodes.get(i))) {
 				nodes.remove(i);
 			}
 		}
@@ -256,18 +261,19 @@ public class LLAPSearch extends GenericSearch{
 	
 	 public Node BF() {
 		System.out.println("Starting BFS ...");
-    	return this.search(new LinkedList<Node>());
+		this.queue = new LinkedList<Node>();
+    	return this.search();
     }
 	 
 	public Node DF() {
 		System.out.println("Starting DFS ...");
-		return this.search( new PriorityQueue<Node>((o1, o2) -> {
+		this.queue = new PriorityQueue<Node>((o1, o2) -> {
     		return o1.depth>o2.depth?-1:1;
-    	}));
+    	});
+		return this.search();
     }
 	
 	public Node LD(int limit) {
-		System.out.println("Starting LDS ...");
 		maxDepth = limit;
 		Node goal = DF();
 		return goal;
@@ -278,6 +284,7 @@ public class LLAPSearch extends GenericSearch{
 		Node goal = null;
 		for(int i = 0; i <Integer.MAX_VALUE; i++) {
 			goal = LD(i);
+			this.nodesInQueue.clear();
 			if(goal != null) {
 				break;
 			}
@@ -287,9 +294,11 @@ public class LLAPSearch extends GenericSearch{
 	
 	public Node UC() {
 		System.out.println("Starting UCS ...");
-		return this.search( new PriorityQueue<Node>((o1, o2) -> {
+		this.queue = new PriorityQueue<Node>((o1, o2) -> {
     		return o1.pathCost<o2.pathCost?-1:1;
-    	}));
+    	});
+		return this.search();
     }
 	
+
 }

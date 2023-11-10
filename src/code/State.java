@@ -33,14 +33,28 @@ public class State {
 	@Override
 	public String toString() {
 		return "State [prosperity=" + prosperity + ", food=" + food + ", materials=" + materials + ", energy=" + energy
-				+ "]";
+				+ ", delay=" + delay + ", requestedResources=" + requestedResources + "]";
+	}
+	
+	@Override
+	public int hashCode() {
+	    int result = 17;
+	    result = 31 * result + prosperity;
+	    result = 31 * result + food;
+	    result = 31 * result + materials;
+	    result = 31 * result + energy;
+	    result = 31 * result + delay;
+	    result = 31 * result + (requestedResources == null ? 0 : requestedResources.hashCode());
+
+	    return result;
 	}
 
 	@Override
 	public boolean equals(Object o) {
 		State comingState = (State)o;
-		return (this.energy == comingState.energy && this.food == comingState.food && this.materials == comingState.materials &&
-				this.prosperity == comingState.prosperity && this.delay == comingState.delay && this.requestedResources == comingState.requestedResources);
+		return (this.energy <= comingState.energy && this.food <= comingState.food && this.materials <= comingState.materials &&
+				this.prosperity <= comingState.prosperity && 
+				this.delay >= comingState.delay && this.requestedResources == comingState.requestedResources);
 	}
 	
 	

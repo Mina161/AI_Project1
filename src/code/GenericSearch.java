@@ -1,6 +1,7 @@
 package code;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -8,19 +9,18 @@ import java.util.Queue;
 public abstract class GenericSearch {
 	Node root;
 	Queue<Node> expandedNodes;
+	Queue<Node> queue;
+	HashSet<Node> nodesInQueue = new HashSet<Node>();
 	
 
 	public GenericSearch() {
 		this.expandedNodes = new LinkedList<Node>();
 	}
 	
-	public Node search(Queue<Node> queue) {
+	public Node search() {
 		queue.add(root);
 		while(!queue.isEmpty()) {
 			Node currNode = queue.poll();
-			System.out.println("Expanding Node: ");
-			System.out.println(currNode);
-			System.out.println();
 			expandedNodes.add(currNode);
 			if(this.goalTest(currNode))
 				return currNode;

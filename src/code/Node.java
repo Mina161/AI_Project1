@@ -29,8 +29,14 @@ public class Node implements Comparable<Node>{
 	}
 	
 	@Override
+	public int hashCode() {
+	    return state.hashCode();
+	}
+	
+	@Override
 	public boolean equals(Object o) {
-		return this.state.equals(((Node)o).state);
+		Node comingNode = (Node) o;
+		return this.state.equals(comingNode.state) && this.pathCost >= comingNode.pathCost;
 	}
 	
 	

@@ -13,9 +13,9 @@ public class Constants {
     }
 
     enum Action {
-        REQUEST_FOOD,
-        REQUEST_MATERIALS,
-        REQUEST_ENERGY,
+        REQUESTFOOD,
+        REQUESTMATERIALS,
+        REQUESTENERGY,
         WAIT,
         BUILD1,
         BUILD2
